@@ -1,0 +1,13 @@
+pandas
+pyspark
+torch
+sentence-transformers
+transformers
+faiss-cpu
+langchain
+fastapi
+streamlit
+mlflow
+pytest
+pandera
+pre-commit
