@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../data:/app/data
+      - ../config.yaml:/app/config.yaml
+    environment:
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Streamlit Frontend
+  streamlit:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - ../data:/app/data
+      - ../config.yaml:/app/config.yaml
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Development environment
+  dev:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: dev
+    ports:
+      - "8000:8000"  # API
+      - "8501:8501"  # Streamlit
+      - "8888:8888"  # Jupyter
+    volumes:
+      - ../:/app
+      - ../data:/app/data
+    environment:
+      - PYTHONPATH=/app
+    command: bash -c "jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root & python api/main.py --host 0.0.0.0 --port 8000 & streamlit run streamlit_app/app.py --server.port 8501 --server.address 0.0.0.0"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  data:
+    driver: local

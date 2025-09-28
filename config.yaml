@@ -1,0 +1,41 @@
+preprocess:
+  input_glob: "data/raw/*/*.parquet"
+  output_parquet: "data/processed/reviews_clean.parquet"
+  output_sample_for_eda: "data/exports/eda_sample.parquet"
+  mode: "stratified_sample"   # single_category | stratified_sample | full
+  single_category: "Lawn and Garden"
+  verified_only: true
+  min_tokens: 3
+  max_chars: 4000
+  text_fields: ["review_body", "product_title"]
+  sampling:
+    seed: 42
+    target_rows_total: 100000
+    stratify_by: "star_rating"
+    per_category_cap: 25000
+    fraction_floor: 0.02
+  eda_export:
+    rows: 20000
+
+embedding:
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
+  batch_size: 64
+  normalize: true
+  index_type: "HNSW"
+  output_path: "data/embeddings/"
+
+rag:
+  top_k: 5
+  max_input_chars: 3000
+  generator_model: "google/flan-t5-base"
+
+recommend:
+  top_k: 10
+  min_similarity: 0.3
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+
+ui:
+  streamlit_port: 8501
